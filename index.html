@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>English AI Learning App</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="English AI App">
+
+<style>
+body { font-family: Arial; margin:0; background:#eef6ff; text-align:center; padding:10px; }
+.container { max-width:800px; margin:auto; background:white; padding:16px; border-radius:12px; }
+button { width:100%; padding:14px; margin:6px 0; font-size:16px; border:none; border-radius:10px; background:#f0f0f0; }
+button:active { transform:scale(0.98); }
+.correct { background:#b6f2c2 !important; }
+.wrong { background:#ffb3b3 !important; }
+input { width:95%; padding:12px; font-size:16px; margin:10px 0; }
+#game { display:none; }
+.score { font-size:18px; margin:6px; }
+.small { font-size:14px; opacity:0.7; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>🧠 English AI Learning App</h1>
+<p class="small">Das System lernt automatisch deine Schwächen</p>
+
+<div id="start">
+  <input id="name" placeholder="Dein Name">
+  <button id="startBtn" disabled>Start</button>
+</div>
+
+<div id="game">
+  <div class="score" id="score">Score: 0</div>
+  <div class="score" id="level">Level: 1</div>
+  <div class="score" id="streak">Streak: 0</div>
+
+  <h2 id="q"></h2>
+  <div id="answers"></div>
+</div>
+</div>
+
+<script>
+let player="";
+let score=0;
+let streak=0;
+let currentQ=null;
+
+// 🧠 AI MEMORY SYSTEM (spaced repetition light)
+let memory = JSON.parse(localStorage.getItem("ai_memory")||"{}");
+
+const questions=[
+ {q:"go → past",a:"went",o:["goed","went","gone"]},
+ {q:"eat → past",a:"ate",o:["eated","ate","eaten"]},
+ {q:"see → past",a:"saw",o:["seen","saw","seed"]},
+ {q:"She ___ (go)",a:"goes",o:["go","goes","going"]},
+ {q:"They ___ (play)",a:"play",o:["plays","play","playing"]},
+ {q:"run → past",a:"ran",o:["runned","ran","run"]},
+ {q:"think → past",a:"thought",o:["thinked","thought","thunk"]}
+];
+
+function shuffle(a){return a.sort(()=>Math.random()-0.5);}
+
+function weightPick(){
+  let pool=[];
+  questions.forEach(q=>{
+    let w=(memory[q.q]||1);
+    for(let i=0;i<w;i++) pool.push(q);
+  });
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function sound(ok){
+ try{
+  let c=new (window.AudioContext||window.webkitAudioContext)();
+  let o=c.createOscillator();
+  o.frequency.value=ok?750:180;
+  o.connect(c.destination);
+  o.start();
+  setTimeout(()=>o.stop(),100);
+ }catch(e){}
+}
+
+name.oninput=()=>{
+ startBtn.disabled=name.value.trim()=="";
+};
+
+startBtn.onclick=()=>{
+ player=name.value;
+ start.style.display="none";
+ game.style.display="block";
+ next();
+};
+
+function next(){
+ currentQ = weightPick();
+
+ q.innerText = currentQ.q;
+ answers.innerHTML="";
+
+ shuffle([...currentQ.o]).forEach(opt=>{
+   let b=document.createElement("button");
+   b.innerText=opt;
+   b.onclick=()=>check(opt);
+   answers.appendChild(b);
+ });
+}
+
+function check(ans){
+ let correct=currentQ.a;
+ document.querySelectorAll("button").forEach(b=>b.disabled=true);
+
+ if(ans===correct){
+   score++;
+   streak++;
+   sound(true);
+   memory[currentQ.q]=Math.max(1,(memory[currentQ.q]||1)-1);
+ } else {
+   streak=0;
+   sound(false);
+   memory[currentQ.q]=(memory[currentQ.q]||1)+2;
+ }
+
+ localStorage.setItem("ai_memory",JSON.stringify(memory));
+
+ document.getElementById("score").innerText="Score: "+score;
+ document.getElementById("streak").innerText="Streak: "+streak;
+
+ setTimeout(next,700);
+}
+</script>
+
+</body>
+</html>
