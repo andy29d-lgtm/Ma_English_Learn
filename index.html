@@ -3,53 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>English Learning App – Release</title>
+
+<title>English Learning App</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="English AI App">
 
 <style>
-body { font-family: Arial; margin:0; background:#eef6ff; text-align:center; padding:12px; }
-.container { max-width:800px; margin:auto; background:white; padding:16px; border-radius:12px; }
-button { width:100%; padding:14px; margin:6px 0; font-size:16px; border:none; border-radius:10px; background:#f0f0f0; }
-button:active { transform:scale(0.98); }
-.correct { background:#b6f2c2 !important; }
-.wrong { background:#ffb3b3 !important; }
-input { width:95%; padding:12px; font-size:16px; margin:10px 0; }
-#game { display:none; }
-.score { font-size:18px; margin:6px; }
-.small { font-size:14px; opacity:0.7; }
+body{
+  margin:0;
+  font-family:Arial;
+  background:#eef6ff;
+  text-align:center;
+  padding:12px;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+  background:white;
+  padding:16px;
+  border-radius:12px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  margin:6px 0;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#f0f0f0;
+}
+
+button:active{transform:scale(0.98);}
+
+.correct{background:#b6f2c2 !important;}
+.wrong{background:#ffb3b3 !important;}
+
+input{
+  width:95%;
+  padding:12px;
+  font-size:16px;
+  margin:10px 0;
+}
+
+#game{display:none;}
+
+.score{font-size:18px;margin:6px;}
+.small{font-size:14px;opacity:0.7;}
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
 <h1>🎮 English Learning App</h1>
-<p class="small">Release Version – Adaptive Learning</p>
+<p class="small">Adaptive KI Lernsystem</p>
 
 <div id="startScreen">
   <input id="name" placeholder="Dein Name">
   <button id="startBtn" disabled>Start</button>
-  <p class="small">Bitte Namen eingeben</p>
+  <p class="small">Name eingeben</p>
 </div>
 
 <div id="game">
   <div class="score" id="score">Score: 0</div>
   <div class="score" id="streak">Streak: 0</div>
-  <h2 id="q"></h2>
+
+  <h2 id="question"></h2>
   <div id="answers"></div>
 </div>
+
 </div>
 
 <script>
+
 let player="";
 let score=0;
 let streak=0;
-let currentQ=null;
+let current=null;
 
-let memory = JSON.parse(localStorage.getItem("ai_memory")||"{}");
+// 🧠 Lern-Gedächtnis (KI Effekt)
+let memory = JSON.parse(localStorage.getItem("memory")||"{}");
 
 const questions=[
  {q:"go → past",a:"went",o:["goed","went","gone"]},
@@ -61,57 +98,70 @@ const questions=[
  {q:"think → past",a:"thought",o:["thinked","thought","thunk"]}
 ];
 
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
+function shuffle(a){
+ return a.sort(()=>Math.random()-0.5);
+}
 
-function pick(){
+// 🧠 KI Auswahl: Fehler kommen öfter
+function pickQuestion(){
  let pool=[];
  questions.forEach(q=>{
-   let w=(memory[q.q]||1);
-   for(let i=0;i<w;i++) pool.push(q);
+   let weight = (memory[q.q]||1);
+   for(let i=0;i<weight;i++) pool.push(q);
  });
  return pool[Math.floor(Math.random()*pool.length)];
 }
 
+// 🔊 Sound
 function sound(ok){
  try{
-  let c=new (window.AudioContext||window.webkitAudioContext)();
-  let o=c.createOscillator();
-  o.frequency.value=ok?720:180;
-  o.connect(c.destination);
+  let ctx=new (window.AudioContext||window.webkitAudioContext)();
+  let o=ctx.createOscillator();
+  o.frequency.value=ok?700:200;
+  o.connect(ctx.destination);
   o.start();
   setTimeout(()=>o.stop(),120);
  }catch(e){}
 }
 
+// 🎮 nächste Frage
 function next(){
- currentQ = pick();
- q.innerText = currentQ.q;
- answers.innerHTML="";
+ current = pickQuestion();
 
- shuffle([...currentQ.o]).forEach(opt=>{
+ document.getElementById("question").innerText=current.q;
+
+ let box=document.getElementById("answers");
+ box.innerHTML="";
+
+ shuffle([...current.o]).forEach(opt=>{
    let b=document.createElement("button");
    b.innerText=opt;
-   b.onclick=()=>check(opt);
-   answers.appendChild(b);
+   b.onclick=()=>check(opt,b);
+   box.appendChild(b);
  });
 }
 
-function check(ans){
- let correct=currentQ.a;
+// ✅ Antwort prüfen
+function check(ans,btn){
+
  document.querySelectorAll("button").forEach(b=>b.disabled=true);
 
- if(ans===correct){
+ if(ans===current.a){
+   btn.classList.add("correct");
    score++;
    streak++;
    sound(true);
-   memory[currentQ.q]=Math.max(1,(memory[currentQ.q]||1)-1);
- } else {
+
+   memory[current.q]=Math.max(1,(memory[current.q]||1)-1);
+ }else{
+   btn.classList.add("wrong");
    streak=0;
    sound(false);
-   memory[currentQ.q]=(memory[currentQ.q]||1)+2;
+
+   memory[current.q]=(memory[current.q]||1)+2;
  }
 
- localStorage.setItem("ai_memory",JSON.stringify(memory));
+ localStorage.setItem("memory",JSON.stringify(memory));
 
  document.getElementById("score").innerText="Score: "+score;
  document.getElementById("streak").innerText="Streak: "+streak;
@@ -119,12 +169,15 @@ function check(ans){
  setTimeout(next,800);
 }
 
+// 🚀 Start
 function startGame(){
- player = name.value.trim();
- if(!player) return;
+ let name=document.getElementById("name").value.trim();
+ if(!name) return;
 
- startScreen.style.display="none";
- game.style.display="block";
+ player=name;
+
+ document.getElementById("startScreen").style.display="none";
+ document.getElementById("game").style.display="block";
 
  score=0;
  streak=0;
@@ -132,16 +185,19 @@ function startGame(){
  next();
 }
 
+// 🧷 FIX: funktioniert auf iPhone + Chrome
 window.addEventListener("DOMContentLoaded",()=>{
- const nameInput=document.getElementById("name");
- const startBtn=document.getElementById("startBtn");
 
- nameInput.addEventListener("input",()=>{
-   startBtn.disabled = nameInput.value.trim()==="";
+ const name=document.getElementById("name");
+ const btn=document.getElementById("startBtn");
+
+ name.addEventListener("input",()=>{
+   btn.disabled=name.value.trim()==="";
  });
 
- startBtn.addEventListener("click",startGame);
+ btn.addEventListener("click",startGame);
 });
+
 </script>
 
 </body>
