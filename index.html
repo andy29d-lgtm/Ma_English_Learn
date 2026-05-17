@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>English AI Learning App</title>
+<title>English Learning App – Release</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="English AI App">
 
 <style>
-body { font-family: Arial; margin:0; background:#eef6ff; text-align:center; padding:10px; }
+body { font-family: Arial; margin:0; background:#eef6ff; text-align:center; padding:12px; }
 .container { max-width:800px; margin:auto; background:white; padding:16px; border-radius:12px; }
 button { width:100%; padding:14px; margin:6px 0; font-size:16px; border:none; border-radius:10px; background:#f0f0f0; }
 button:active { transform:scale(0.98); }
@@ -22,22 +22,22 @@ input { width:95%; padding:12px; font-size:16px; margin:10px 0; }
 .small { font-size:14px; opacity:0.7; }
 </style>
 </head>
+
 <body>
 
 <div class="container">
-<h1>🧠 English AI Learning App</h1>
-<p class="small">Das System lernt automatisch deine Schwächen</p>
+<h1>🎮 English Learning App</h1>
+<p class="small">Release Version – Adaptive Learning</p>
 
-<div id="start">
+<div id="startScreen">
   <input id="name" placeholder="Dein Name">
   <button id="startBtn" disabled>Start</button>
+  <p class="small">Bitte Namen eingeben</p>
 </div>
 
 <div id="game">
   <div class="score" id="score">Score: 0</div>
-  <div class="score" id="level">Level: 1</div>
   <div class="score" id="streak">Streak: 0</div>
-
   <h2 id="q"></h2>
   <div id="answers"></div>
 </div>
@@ -49,7 +49,6 @@ let score=0;
 let streak=0;
 let currentQ=null;
 
-// 🧠 AI MEMORY SYSTEM (spaced repetition light)
 let memory = JSON.parse(localStorage.getItem("ai_memory")||"{}");
 
 const questions=[
@@ -64,40 +63,28 @@ const questions=[
 
 function shuffle(a){return a.sort(()=>Math.random()-0.5);}
 
-function weightPick(){
-  let pool=[];
-  questions.forEach(q=>{
-    let w=(memory[q.q]||1);
-    for(let i=0;i<w;i++) pool.push(q);
-  });
-  return pool[Math.floor(Math.random()*pool.length)];
+function pick(){
+ let pool=[];
+ questions.forEach(q=>{
+   let w=(memory[q.q]||1);
+   for(let i=0;i<w;i++) pool.push(q);
+ });
+ return pool[Math.floor(Math.random()*pool.length)];
 }
 
 function sound(ok){
  try{
   let c=new (window.AudioContext||window.webkitAudioContext)();
   let o=c.createOscillator();
-  o.frequency.value=ok?750:180;
+  o.frequency.value=ok?720:180;
   o.connect(c.destination);
   o.start();
-  setTimeout(()=>o.stop(),100);
+  setTimeout(()=>o.stop(),120);
  }catch(e){}
 }
 
-name.oninput=()=>{
- startBtn.disabled=name.value.trim()=="";
-};
-
-startBtn.onclick=()=>{
- player=name.value;
- start.style.display="none";
- game.style.display="block";
- next();
-};
-
 function next(){
- currentQ = weightPick();
-
+ currentQ = pick();
  q.innerText = currentQ.q;
  answers.innerHTML="";
 
@@ -129,8 +116,32 @@ function check(ans){
  document.getElementById("score").innerText="Score: "+score;
  document.getElementById("streak").innerText="Streak: "+streak;
 
- setTimeout(next,700);
+ setTimeout(next,800);
 }
+
+function startGame(){
+ player = name.value.trim();
+ if(!player) return;
+
+ startScreen.style.display="none";
+ game.style.display="block";
+
+ score=0;
+ streak=0;
+
+ next();
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+ const nameInput=document.getElementById("name");
+ const startBtn=document.getElementById("startBtn");
+
+ nameInput.addEventListener("input",()=>{
+   startBtn.disabled = nameInput.value.trim()==="";
+ });
+
+ startBtn.addEventListener("click",startGame);
+});
 </script>
 
 </body>
